@@ -1,8 +1,8 @@
 # md2csv
 
-Converts an IETF standards document (RFC) into a CSV file, ignoring common sections such as the `Introduction`, `Definitions`, `Acknowledgements`, etc.
+Converts a Markdown document into a CSV file based on the document index, ignoring common sections such as the `Introduction`, `Definitions`, `Acknowledgements`, etc.
 
-This application was written with the intention to create a quick compliance check list from an RFC document.
+This application was written with the intention to create a quick compliance check list from requirements written in markdown such as the [CA/Browser Forum Documents](https://github.com/cabforum/documents) and the [Mozilla PKI Policy](https://github.com/mozilla/pkipolicy/).
 
 ## Install
 ```bash
