@@ -1,7 +1,7 @@
 FROM golang
 WORKDIR /go/src/github.com/digitorus/md2csv/
-RUN go get -d -v ./...
-COPY *.go .
+RUN go get -d -v github.com/gomarkdown/markdown
+COPY *.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o md2csv .
 
 FROM alpine:latest  
