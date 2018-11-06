@@ -1,3 +1,4 @@
 *.csv
 *.exe
+*.md
 md2csv

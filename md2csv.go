@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"os"
 	"regexp"
 	"path"
 	"sync"
 	"fmt"
+	"io"
 	"log"
 	"io/ioutil"
 	"encoding/csv"
@@ -27,6 +29,7 @@ type Service struct {
 
 var sectionFormat = regexp.MustCompile(`^([0-9]+\.?)+$`)
 var sectionSeperator = regexp.MustCompile(`\s`)
+var doubleNewlines = regexp.MustCompile(`(?m)^[\s\n$]+`)
 
 var skipSections = []string{"Introduction", "Scope", "Definitions", "Acronyms",
 	"Revisions", "PUBLICATION AND REPOSITORY RESPONSIBILITIES", 
@@ -38,17 +41,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, url := range os.Args[1:] {
-		fmt.Println("Processing:", url)
+	for _, arg := range os.Args[1:] {
+		fmt.Println("Processing:", arg)
 
-		err := parse(url)
-		if err != nil {
-			log.Fatal(err)
+		if strings.HasPrefix(arg, "http") {
+			err := fromURL(arg)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			file, err := os.Open(arg)
+			if err != nil {
+				log.Fatal(err)
+			}
+			parse(arg, bufio.NewReader(file))
 		}
+
 	}
 }
 
-func parse(url string) error {
+func fromURL(url string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -62,10 +74,15 @@ func parse(url string) error {
 		return fmt.Errorf("content type must be text/")
 	}
 
-	s := &Service{}
-	go s.newWriter(path.Base(url))
+	return parse(path.Base(url), resp.Body)
+}
 
-	markdown, err := ioutil.ReadAll(resp.Body)
+func parse(name string, data io.Reader) error {
+
+	s := &Service{}
+	go s.newWriter(name)
+
+	markdown, err := ioutil.ReadAll(data)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,15 +90,15 @@ func parse(url string) error {
 	p := parser.New()
 	s.doc = p.Parse(markdown)
 
-	fmt.Println("Walking", url)
+	fmt.Println("Walking", name)
 	ast.Walk(s.doc, &NodeVisitor{s: s})
-	fmt.Println("Done walking", url)
+	fmt.Println("Done walking", name)
 
 	close(s.save)
 
-	fmt.Println("Almost done with", url)
+	fmt.Println("Almost done with", name)
 	s.wg.Wait()
-	fmt.Println("Done with", url)
+	fmt.Println("Done with", name)
 
 	return nil
 }
@@ -163,7 +180,7 @@ func (n *NodeVisitor) Visit(node ast.Node, entering bool) ast.WalkStatus {
 			n.save()
 
 			n.Name = strings.Trim(title[0], ".") // trimmed above for regex
-			n.Title = strings.TrimSpace(title[1])
+			n.Title = strings.Trim(strings.TrimSpace(title[1]), ".")
 			n.Description = ""
 
 			if strings.HasPrefix(n.Category, n.Name) {
@@ -212,6 +229,8 @@ func (n *NodeVisitor) save() {
 		!inSlice(n.Title, skipSections) {
 
 		n.Description = strings.TrimSpace(n.Description)
+		n.Description = doubleNewlines.ReplaceAllString(n.Description, "\n")
+
 		n.s.save <- n.Row
 	}
 }

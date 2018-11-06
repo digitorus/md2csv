@@ -11,13 +11,17 @@ go install github.com/digitorus/md2csv
 
 ## Usage
 ```bash
-md2csv {url}
-md2csv {url} {url} {url} ...
+md2csv {url|filename}
+md2csv {url|filename} {url|filename} {url|filename} ...
 
+md2csv document.md
 md2csv https://raw.githubusercontent.com/mozilla/pkipolicy/master/rootstore/policy.md
+md2csv https://raw.githubusercontent.com/mozilla/pkipolicy/master/rootstore/policy.md document.md
 md2csv https://raw.githubusercontent.com/cabforum/documents/master/docs/BR.md
 md2csv https://raw.githubusercontent.com/cabforum/documents/master/docs/BR.md https://raw.githubusercontent.com/cabforum/documents/master/docs/EVG.md
 ```
+
+Using [pdf2md](http://pdf2md.morethan.io/) you can convert a PDF document to Markdown so that you can use it with `md2csv`. 
 
 ## Using Docker
 ```bash
